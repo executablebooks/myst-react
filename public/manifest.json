@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "MyST Demonstrator",
+  "name": "An app for rendering MyST Markdown",
   "icons": [
     {
       "src": "favicon.ico",
