@@ -1,3 +1,6 @@
+/**
+ * Ported from https://github.com/executablebooks/markdown-it-py/blob/master/markdown_it/tree.py
+ */
 import { AssertionError } from 'assert'
 
 import Token from 'markdown-it/lib/token'
@@ -10,7 +13,7 @@ interface _NesterTokens {
 /** A Markdown syntax tree node.
 
 A class that can be used to construct a tree representation of a linear
-`markdown-it-py` token stream.
+`markdown-it` token stream.
 
 Each node in the tree represents either:
   - root of the Markdown document
