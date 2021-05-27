@@ -1,8 +1,12 @@
-import React from 'react'
+/** This is the baseline renderer
+ * for converting Markdown to React components via markdown-it.
+ * It includes no plugins and renders to basic React primitives
+ */
 
-import SyntaxHighlighter from 'react-syntax-highlighter'
+import React, { useContext } from 'react'
 
 import MarkdownIt from 'markdown-it'
+import SyntaxHighlighter from 'react-syntax-highlighter'
 
 import SyntaxTreeNode from './tree'
 
@@ -14,124 +18,97 @@ export interface IParseOptions {
   linkify?: boolean
   typographer?: boolean
   quotes?: string | string[]
-  highlight?: ((str: string, lang: string, attrs: string) => string) | null
   [key: string]: any
 }
 
+export type TPresetName = 'default' | 'zero' | 'commonmark'
+
 export interface IRenderProps {
   node: SyntaxTreeNode
-  options?: IParseOptions
-  env?: any
 }
 
+export interface childProps {
+  index: number
+  child: SyntaxTreeNode
+}
+
+/** A context from which components can access the MarkdownIt options and env */
+const RenderContext = React.createContext<{ options: IParseOptions; env: any }>({
+  options: {},
+  env: {}
+})
+
+/** The principle renderer component */
 export default function MarkdownItRenderer(props: {
   source: string
-  options?: IParseOptions
+  presetName: TPresetName
+  options: IParseOptions
 }): JSX.Element {
-  const md = new MarkdownIt(props.options || {})
+  const md = new MarkdownIt(props.presetName, props.options || {})
   const env = {}
+  // TODO make parse asynchronous?
   const tokens = md.parse(props.source, env)
   const tree = new SyntaxTreeNode(tokens)
-  return <NodeChildren node={tree} options={props.options} env={env} />
+
+  return (
+    <RenderContext.Provider value={{ options: props.options, env }}>
+      <NodeChildren node={tree} />
+    </RenderContext.Provider>
+  )
 }
 
-function NodeChildren(props: IRenderProps): JSX.Element {
+MarkdownItRenderer.defaultProps = {
+  presetName: 'default',
+  options: {}
+}
+
+/** mapping of token types to renderers */
+export const baseRenderers: {
+  [key: string]: (props: childProps) => JSX.Element
+} = {
+  paragraph: props => <Paragraph key={props.index} node={props.child} />,
+  inline: props => <Inline key={props.index} node={props.child} />,
+  text: props => <Text key={props.index} node={props.child} />,
+  bullet_list: props => <BulletList key={props.index} node={props.child} />,
+  ordered_list: props => <OrderedList key={props.index} node={props.child} />,
+  list_item: props => <ListItem key={props.index} node={props.child} />,
+  em: props => <Em key={props.index} node={props.child} />,
+  soft: props => <Softbreak key={props.index} />,
+  hard: props => <Hardbreak key={props.index} />,
+  strong: props => <Strong key={props.index} node={props.child} />,
+  blockquote: props => <Blockquote key={props.index} node={props.child} />,
+  hr: props => <Hr key={props.index} />,
+  code_inline: props => <CodeInline key={props.index} node={props.child} />,
+  code_block: props => <CodeBlock key={props.index} node={props.child} />,
+  fence: props => <Fence key={props.index} node={props.child} />,
+  heading: props => <Heading key={props.index} node={props.child} />,
+  link: props => <Link key={props.index} node={props.child} />,
+  autolink: props => <Autolink key={props.index} node={props.child} />,
+  html_inline: props => <HtmlInline key={props.index} node={props.child} />,
+  html_block: props => <HtmlBlock key={props.index} node={props.child} />,
+  image: props => <Image key={props.index} node={props.child} />,
+  // extended
+  s: props => <StrikeThrough key={props.index} node={props.child} />,
+  table: props => <Table key={props.index} node={props.child} />,
+  thead: props => <TableHead key={props.index} node={props.child} />,
+  tbody: props => <TableBody key={props.index} node={props.child} />,
+  tr: props => <TableRow key={props.index} node={props.child} />,
+  td: props => <TableCell key={props.index} node={props.child} />,
+  th: props => <TableHeadCell key={props.index} node={props.child} />
+}
+
+/** Component to render children of a node */
+function NodeChildren({ node }: { node: SyntaxTreeNode }): JSX.Element {
+  const renderers = baseRenderers
   const rendered: JSX.Element[] = []
-  for (let index = 0; index < props.node.children.length; index++) {
-    const child = props.node.children[index]
+  for (let index = 0; index < node.children.length; index++) {
+    const child = node.children[index]
     if (child.hidden) {
       // Tight list paragraphs
-      continue
-    }
-    switch (child.type) {
-      // Commonmark tokens
-      case 'paragraph':
-        rendered.push(<Paragraph key={index} node={child} />)
-        break
-      case 'inline':
-        rendered.push(<Inline key={index} node={child} />)
-        break
-      case 'text':
-        rendered.push(<Text key={index} node={child} />)
-        break
-      case 'bullet_list':
-        rendered.push(<BulletList key={index} node={child} />)
-        break
-      case 'ordered_list':
-        rendered.push(<OrderedList key={index} node={child} />)
-        break
-      case 'list_item':
-        rendered.push(<ListItem key={index} node={child} />)
-        break
-      case 'em':
-        rendered.push(<Em key={index} node={child} />)
-        break
-      case 'softbreak':
-        rendered.push(<Softbreak key={index} node={child} options={props.options} />)
-        break
-      case 'hardbreak':
-        rendered.push(<Hardbreak key={index} />)
-        break
-      case 'strong':
-        rendered.push(<Strong key={index} node={child} />)
-        break
-      case 'blockquote':
-        rendered.push(<Blockquote key={index} node={child} />)
-        break
-      case 'hr':
-        rendered.push(<Hr key={index} />)
-        break
-      case 'code_inline':
-        rendered.push(<CodeInline key={index} node={child} />)
-        break
-      case 'code_block':
-        rendered.push(<CodeBlock key={index} node={child} />)
-        break
-      case 'fence':
-        rendered.push(<Fence key={index} node={child} />)
-        break
-      case 'heading':
-        rendered.push(<Heading key={index} node={child} />)
-        break
-      case 'link':
-        rendered.push(<Link key={index} node={child} />)
-        break
-      case 'autolink':
-        rendered.push(<Autolink key={index} node={child} />)
-        break
-      case 'html_inline':
-        rendered.push(<HtmlInline key={index} node={child} />)
-        break
-      case 'html_block':
-        rendered.push(<HtmlBlock key={index} node={child} />)
-        break
-      case 'image':
-        rendered.push(<Image key={index} node={child} />)
-        break
-      // extended
-      case 's':
-        rendered.push(<StrikeThrough key={index} node={child} />)
-        break
-      case 'table':
-        rendered.push(<Table key={index} node={child} />)
-        break
-      case 'thead':
-        rendered.push(<TableHead key={index} node={child} />)
-        break
-      case 'tbody':
-        rendered.push(<TableBody key={index} node={child} />)
-        break
-      case 'tr':
-        rendered.push(<TableRow key={index} node={child} />)
-        break
-      case 'td':
-        rendered.push(<TableCell key={index} node={child} />)
-        break
-      case 'th':
-        rendered.push(<TableHeadCell key={index} node={child} />)
-        break
-      default:
-        console.error(`no render component for type ${child.type}`)
+    } else if (!(child.type in renderers)) {
+      console.error(`no render component for type ${child.type}`)
+    } else {
+      rendered.push(renderers[child.type]({ index, child }))
     }
   }
   return <>{rendered}</>
@@ -189,8 +166,9 @@ function Em(props: IRenderProps): JSX.Element {
   )
 }
 
-function Softbreak(props: IRenderProps): JSX.Element {
-  if (props.options?.breaks) {
+function Softbreak(): JSX.Element {
+  const context = useContext(RenderContext)
+  if (context.options?.breaks) {
     return <br />
   }
   return <>{'\n'}</>
@@ -207,6 +185,7 @@ function Strong(props: IRenderProps): JSX.Element {
     </strong>
   )
 }
+
 function Blockquote(props: IRenderProps): JSX.Element {
   return (
     <blockquote>
@@ -214,12 +193,15 @@ function Blockquote(props: IRenderProps): JSX.Element {
     </blockquote>
   )
 }
+
 function Hr(): JSX.Element {
   return <hr />
 }
+
 function CodeInline(props: IRenderProps): JSX.Element {
   return <code>{props.node.content}</code>
 }
+
 function CodeBlock(props: IRenderProps): JSX.Element {
   return (
     <pre>
@@ -227,6 +209,7 @@ function CodeBlock(props: IRenderProps): JSX.Element {
     </pre>
   )
 }
+
 function Fence(props: IRenderProps): JSX.Element {
   if (!props.node.info.trim()) {
     return (
@@ -239,6 +222,7 @@ function Fence(props: IRenderProps): JSX.Element {
   const langName = info[0]
   return <SyntaxHighlighter language={langName}>{props.node.content}</SyntaxHighlighter>
 }
+
 function Heading(props: IRenderProps): JSX.Element {
   switch (props.node.tag) {
     case 'h1':
@@ -282,6 +266,7 @@ function Heading(props: IRenderProps): JSX.Element {
   }
   return <></>
 }
+
 function Link(props: IRenderProps): JSX.Element {
   return (
     <a href={props.node.attrs.href ? `${props.node.attrs.href}` : undefined}>
@@ -289,6 +274,7 @@ function Link(props: IRenderProps): JSX.Element {
     </a>
   )
 }
+
 function Autolink(props: IRenderProps): JSX.Element {
   return (
     <a href={props.node.attrs.href ? `${props.node.attrs.href}` : undefined}>
@@ -296,6 +282,7 @@ function Autolink(props: IRenderProps): JSX.Element {
     </a>
   )
 }
+
 function HtmlInline(props: IRenderProps): JSX.Element {
   // TODO weirdly here it is splitting e.g. <em>a</em> into html+text+html
   // it doesn't do this for block HTML
@@ -307,6 +294,7 @@ function HtmlInline(props: IRenderProps): JSX.Element {
     />
   )
 }
+
 function HtmlBlock(props: IRenderProps): JSX.Element {
   // TODO see HtmlInline
   return (
@@ -317,6 +305,7 @@ function HtmlBlock(props: IRenderProps): JSX.Element {
     />
   )
 }
+
 function Image(props: IRenderProps): JSX.Element {
   return (
     <img
@@ -325,6 +314,7 @@ function Image(props: IRenderProps): JSX.Element {
     />
   )
 }
+
 function StrikeThrough(props: IRenderProps): JSX.Element {
   return (
     <s>
@@ -332,6 +322,7 @@ function StrikeThrough(props: IRenderProps): JSX.Element {
     </s>
   )
 }
+
 function Table(props: IRenderProps): JSX.Element {
   return (
     <table>
@@ -339,6 +330,7 @@ function Table(props: IRenderProps): JSX.Element {
     </table>
   )
 }
+
 function TableHead(props: IRenderProps): JSX.Element {
   return (
     <thead>
@@ -346,6 +338,7 @@ function TableHead(props: IRenderProps): JSX.Element {
     </thead>
   )
 }
+
 function TableBody(props: IRenderProps): JSX.Element {
   return (
     <tbody>
@@ -353,6 +346,7 @@ function TableBody(props: IRenderProps): JSX.Element {
     </tbody>
   )
 }
+
 function TableRow(props: IRenderProps): JSX.Element {
   return (
     <tr>
@@ -360,6 +354,7 @@ function TableRow(props: IRenderProps): JSX.Element {
     </tr>
   )
 }
+
 function TableCell(props: IRenderProps): JSX.Element {
   const style: { textAlign?: 'center' | 'left' | 'right' } = {}
   if (typeof props.node.attrs.style === 'string') {
@@ -377,6 +372,7 @@ function TableCell(props: IRenderProps): JSX.Element {
     </td>
   )
 }
+
 function TableHeadCell(props: IRenderProps): JSX.Element {
   const style = {}
   if (props.node.attrs.style) {

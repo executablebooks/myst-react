@@ -9,7 +9,10 @@ import {
   FormGroup,
   FormLabel,
   Grid,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
   TextField,
   Toolbar,
   Tooltip,
@@ -18,7 +21,7 @@ import {
 } from '@material-ui/core'
 import { Restore } from '@material-ui/icons'
 
-import MarkdownItRenderer from './renderer/renderBase'
+import MarkdownItRenderer, { TPresetName } from './renderer/renderBase'
 
 import { useStyles, useForm } from './hooks'
 import { defaultText } from './defaultText'
@@ -44,6 +47,8 @@ function App(): JSX.Element {
     setSourceText(event.target.value)
   }
 
+  const [presetName, setPresetName] = useState<TPresetName>('default')
+
   const defaultOptions = Object.entries(options).reduce((p, [k, v]) => {
     p[k] = v.default
     return p
@@ -54,6 +59,7 @@ function App(): JSX.Element {
   function reset(): void {
     setSourceText(defaultText)
     resetParseOptions()
+    setPresetName('default')
   }
 
   return (
@@ -64,7 +70,7 @@ function App(): JSX.Element {
           <Grid item xs={12}>
             <Paper variant="outlined" style={{ padding: theme.spacing(2) }}>
               <FormControl component="fieldset">
-                <FormLabel component="legend">Parsing Options</FormLabel>
+                <FormLabel>Parsing Options</FormLabel>
                 <FormGroup aria-label="position" row>
                   {Object.entries(options).map(([key, value]) => (
                     <Tooltip key={key} title={value.tooltip || ''}>
@@ -82,6 +88,24 @@ function App(): JSX.Element {
                     </Tooltip>
                   ))}
                 </FormGroup>
+              </FormControl>
+              <FormControl style={{ marginLeft: theme.spacing(1), minWidth: 120 }}>
+                <InputLabel>Preset Name</InputLabel>
+                <Select
+                  labelId="preset-name-select-label"
+                  id="preset-name-select-select"
+                  value={presetName}
+                  onChange={(
+                    event: React.ChangeEvent<{
+                      name?: string | undefined
+                      value: unknown
+                    }>
+                  ) => setPresetName(event.target.value as TPresetName)}
+                >
+                  <MenuItem value="default">default</MenuItem>
+                  <MenuItem value="commonmark">commonmark</MenuItem>
+                  <MenuItem value="zero">zero</MenuItem>
+                </Select>
               </FormControl>
               <Button
                 variant="contained"
@@ -123,7 +147,11 @@ function App(): JSX.Element {
                 overflow: 'auto'
               }}
             >
-              <MarkdownItRenderer source={sourceText} options={parseOptions} />
+              <MarkdownItRenderer
+                source={sourceText}
+                presetName={presetName}
+                options={parseOptions}
+              />
             </Paper>
           </Grid>
         </Grid>
