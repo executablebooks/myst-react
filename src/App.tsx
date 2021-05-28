@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import {
   AppBar,
@@ -23,8 +23,9 @@ import {
 } from '@material-ui/core'
 import { Restore } from '@material-ui/icons'
 
-import MarkdownItRenderer, { TPresetName } from './renderer/renderBase'
+import throttle from 'lodash.throttle'
 
+import MarkdownItRenderer, { TPresetName } from './renderer/renderBase'
 import { useStyles, useForm } from './hooks'
 import { defaultText } from './defaultText'
 
@@ -46,10 +47,14 @@ function App(): JSX.Element {
   const theme = useTheme()
   const classes = useStyles()
 
+  // we maintain a throttled version of the source text here also, to parse to the renderer
+  // to reduce the number of times that the preview gets rendered
   const [sourceText, setSourceText] = useState(defaultText)
-
+  const [throttledSourceText, setThrottledSourceText] = useState(defaultText)
+  const throttledSourceChange = useCallback(throttle(setThrottledSourceText, 300), [])
   const handleSourceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSourceText(event.target.value)
+    throttledSourceChange(event.target.value)
   }
 
   const [presetName, setPresetName] = useState<TPresetName>('default')
@@ -63,6 +68,7 @@ function App(): JSX.Element {
 
   function reset(): void {
     setSourceText(defaultText)
+    setThrottledSourceText(defaultText)
     resetParseOptions()
     setPresetName('default')
   }
@@ -153,7 +159,7 @@ function App(): JSX.Element {
               }}
             >
               <MarkdownItRenderer
-                source={sourceText}
+                source={throttledSourceText}
                 presetName={presetName}
                 options={parseOptions}
               />
