@@ -14,6 +14,7 @@ import {
   MenuItem,
   Paper,
   Select,
+  Slider,
   SvgIcon,
   TextField,
   Toolbar,
@@ -30,7 +31,7 @@ import { useStyles, useForm } from './hooks'
 import { defaultText } from './defaultText'
 
 const options: {
-  [key: string]: { default: boolean; tooltip?: string; alias?: string }
+  [key: string]: { default: boolean; tooltip?: string }
 } = {
   html: {
     default: false,
@@ -63,8 +64,9 @@ function App(): JSX.Element {
     p[k] = v.default
     return p
   }, {} as any)
+  defaultOptions.imageWidth = 40
 
-  const [parseOptions, setParseOptions, resetParseOptions] = useForm(defaultOptions)
+  const [parseOptions, setParseOption, resetParseOptions] = useForm(defaultOptions)
 
   function reset(): void {
     setSourceText(defaultText)
@@ -80,55 +82,78 @@ function App(): JSX.Element {
         <Grid container spacing={2}>
           <Grid item xs={12}>
             <Paper variant="outlined" style={{ padding: theme.spacing(2) }}>
-              <FormControl component="fieldset">
-                <FormLabel>Parsing Options</FormLabel>
-                <FormGroup aria-label="position" row>
-                  {Object.entries(options).map(([key, value]) => (
-                    <Tooltip key={key} title={value.tooltip || ''}>
-                      <FormControlLabel
-                        label={key}
-                        control={
-                          <Checkbox
-                            color="primary"
-                            name={key}
-                            checked={parseOptions[key]}
-                            onChange={setParseOptions}
+              <Grid container spacing={2} alignItems="center" justify="space-between">
+                <Grid item>
+                  <FormControl component="fieldset">
+                    <FormLabel>Parsing Options</FormLabel>
+                    <FormGroup aria-label="position" row>
+                      {Object.entries(options).map(([key, value]) => (
+                        <Tooltip key={key} title={value.tooltip || ''}>
+                          <FormControlLabel
+                            label={key}
+                            control={
+                              <Checkbox
+                                color="primary"
+                                name={key}
+                                checked={parseOptions[key]}
+                                onChange={(event, checked) =>
+                                  setParseOption(event.target.name, checked)
+                                }
+                              />
+                            }
                           />
-                        }
-                      />
-                    </Tooltip>
-                  ))}
-                </FormGroup>
-              </FormControl>
-              <FormControl style={{ marginLeft: theme.spacing(1), minWidth: 120 }}>
-                <InputLabel>Preset Name</InputLabel>
-                <Select
-                  labelId="preset-name-select-label"
-                  id="preset-name-select-select"
-                  value={presetName}
-                  onChange={(
-                    event: React.ChangeEvent<{
-                      name?: string | undefined
-                      value: unknown
-                    }>
-                  ) => setPresetName(event.target.value as TPresetName)}
-                >
-                  <MenuItem value="default">default</MenuItem>
-                  <MenuItem value="commonmark">commonmark</MenuItem>
-                  <MenuItem value="zero">zero</MenuItem>
-                </Select>
-              </FormControl>
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={() => {
-                  reset()
-                }}
-                startIcon={<Restore />}
-                style={{ float: 'right' }}
-              >
-                Reset
-              </Button>
+                        </Tooltip>
+                      ))}
+                    </FormGroup>
+                  </FormControl>
+                </Grid>
+                <Grid item>
+                  <FormControl style={{ minWidth: 120 }}>
+                    <InputLabel>Preset Name</InputLabel>
+                    <Select
+                      labelId="preset-name-select-label"
+                      id="preset-name-select-select"
+                      value={presetName}
+                      onChange={(
+                        event: React.ChangeEvent<{
+                          name?: string | undefined
+                          value: unknown
+                        }>
+                      ) => setPresetName(event.target.value as TPresetName)}
+                    >
+                      <MenuItem value="default">default</MenuItem>
+                      <MenuItem value="commonmark">commonmark</MenuItem>
+                      <MenuItem value="zero">zero</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item>
+                  <InputLabel style={{ marginBottom: theme.spacing(1) }}>
+                    Image Width
+                  </InputLabel>
+                  <Slider
+                    value={parseOptions.imageWidth}
+                    min={0}
+                    max={100}
+                    aria-labelledby="image-width-slider"
+                    onChange={(event, value) => setParseOption('imageWidth', value)}
+                    marks
+                  />
+                </Grid>
+                <Grid item>
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={() => {
+                      reset()
+                    }}
+                    startIcon={<Restore />}
+                    style={{ float: 'right' }}
+                  >
+                    Reset
+                  </Button>
+                </Grid>
+              </Grid>
             </Paper>
           </Grid>
           <Grid item xs={12} md={6}>

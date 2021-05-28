@@ -18,12 +18,12 @@ export const useStyles = makeStyles((theme: Theme) =>
 
 export function useForm(initValues: {
   [key: string]: any
-}): [{ [key: string]: any }, (e: any, checked: boolean) => void, () => void] {
+}): [{ [key: string]: any }, (name: string, value: any) => void, () => void] {
   const [values, setValues] = useState(initValues)
   return [
     values,
-    (e: any, checked: boolean) => {
-      setValues({ ...values, [e.target.name]: checked })
+    (name: string, value: any) => {
+      setValues({ ...values, [name]: value })
     },
     () => setValues(initValues)
   ]

@@ -19,6 +19,7 @@ export interface IParseOptions {
   typographer?: boolean
   quotes?: string | string[]
   highlighting?: boolean
+  imageWidth?: number
   [key: string]: any
 }
 
@@ -103,7 +104,6 @@ function NodeChildren({ node }: { node: SyntaxTreeNode }): JSX.Element {
   const rendered: JSX.Element[] = []
   for (let index = 0; index < node.children.length; index++) {
     const child = node.children[index]
-    console.log(child.type, child.hidden)
     // if (child.hidden) {
     //   // Tight list paragraphs
     if (!(child.type in renderers)) {
@@ -311,10 +311,14 @@ function HtmlBlock(props: IRenderProps): JSX.Element {
 }
 
 function Image(props: IRenderProps): JSX.Element {
+  const context = useContext(RenderContext)
+
+  const width = context.options.imageWidth
   return (
     <img
       alt={props.node.content}
       src={props.node.attrs.src ? `${props.node.attrs.src}` : undefined}
+      style={{ width: width ? `${width}%` : width }}
     />
   )
 }
