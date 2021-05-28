@@ -28,7 +28,9 @@ import MarkdownItRenderer, { TPresetName } from './renderer/renderBase'
 import { useStyles, useForm } from './hooks'
 import { defaultText } from './defaultText'
 
-const options: { [key: string]: { default: boolean; tooltip?: string } } = {
+const options: {
+  [key: string]: { default: boolean; tooltip?: string; alias?: string }
+} = {
   html: {
     default: false,
     tooltip: 'enable HTML tags in source text'
@@ -36,7 +38,8 @@ const options: { [key: string]: { default: boolean; tooltip?: string } } = {
   // xhtmlOut: { default: false, tooltip: 'produce xhtml output' },
   // breaks: { default: false, tooltip: 'newlines in paragraphs are rendered as <br />' },
   linkify: { default: true, tooltip: 'auto-convert link text to links' },
-  typographer: { default: true, tooltip: 'do typographic replacements' }
+  typographer: { default: true, tooltip: 'perform typographic replacements' },
+  highlighting: { default: true, tooltip: 'syntax highlight fences' }
 }
 
 function App(): JSX.Element {

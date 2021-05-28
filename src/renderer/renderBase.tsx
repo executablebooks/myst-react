@@ -18,6 +18,7 @@ export interface IParseOptions {
   linkify?: boolean
   typographer?: boolean
   quotes?: string | string[]
+  highlighting?: boolean
   [key: string]: any
 }
 
@@ -46,7 +47,6 @@ export default function MarkdownItRenderer(props: {
 }): JSX.Element {
   const md = new MarkdownIt(props.presetName, props.options || {})
   const env = {}
-  // TODO make parse asynchronous?
   const tokens = md.parse(props.source, env)
   const tree = new SyntaxTreeNode(tokens)
 
@@ -211,7 +211,8 @@ function CodeBlock(props: IRenderProps): JSX.Element {
 }
 
 function Fence(props: IRenderProps): JSX.Element {
-  if (!props.node.info.trim()) {
+  const context = useContext(RenderContext)
+  if (!context.options.highlighting || !props.node.info.trim()) {
     return (
       <pre>
         <code>{props.node.content}</code>
@@ -220,6 +221,8 @@ function Fence(props: IRenderProps): JSX.Element {
   }
   const info = props.node.info.trim().split(' ', 1)
   const langName = info[0]
+  // TODO this is not performant for large file:
+  // https://github.com/react-syntax-highlighter/react-syntax-highlighter/issues/302
   return <SyntaxHighlighter language={langName}>{props.node.content}</SyntaxHighlighter>
 }
 
