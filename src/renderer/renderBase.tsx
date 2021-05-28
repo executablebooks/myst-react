@@ -103,9 +103,10 @@ function NodeChildren({ node }: { node: SyntaxTreeNode }): JSX.Element {
   const rendered: JSX.Element[] = []
   for (let index = 0; index < node.children.length; index++) {
     const child = node.children[index]
-    if (child.hidden) {
-      // Tight list paragraphs
-    } else if (!(child.type in renderers)) {
+    console.log(child.type, child.hidden)
+    // if (child.hidden) {
+    //   // Tight list paragraphs
+    if (!(child.type in renderers)) {
       console.error(`no render component for type ${child.type}`)
     } else {
       rendered.push(renderers[child.type]({ index, child }))
